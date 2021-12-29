@@ -1,4 +1,5 @@
 use clvm_rs::node::Node;
+use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::io::Cursor;
 use std::io::Read;
@@ -6,7 +7,6 @@ use std::io::Seek;
 use std::io::Write;
 use std::io::{Error, ErrorKind, SeekFrom};
 use std::os::raw::c_char;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use clvm_rs::allocator::{Allocator, NodePtr, SExp};
@@ -92,7 +92,7 @@ pub extern "C" fn rust_run_clvm_program(data: &[u8]) -> *mut std::string::String
     };
     let args = allocator.null();
     let dialect = chia_dialect(false);
-    let max_cost = 12000000000;
+    let max_cost = 12000000000 as u64;
     let program_response = DefaultProgramRunner::new().run_program(
         &mut allocator,
         program,
@@ -233,11 +233,11 @@ enum ParseOp {
     Cons,
 }
 
-impl std::convert::From<EvalErr> for std::io::Error {
+/* impl std::convert::From<EvalErr> for std::io::Error {
     fn from(v: EvalErr) -> Self {
         Self::new(ErrorKind::Other, v.1)
     }
-}
+} */
 
 pub fn node_from_stream(
     allocator: &mut Allocator,
