@@ -4,8 +4,9 @@ use crate::classic::clvm_tools::sha256tree::sha256tree;
 use crate::classic::clvm_tools::stages::stage_0::{
     DefaultProgramRunner, RunProgramOption, TRunProgram,
 };
-use crate::clvm_serialize::{node_from_bytes, node_to_bytes};
+//use crate::clvm_serialize::{node_from_bytes, node_to_bytes};
 use clvm_rs::allocator::Allocator;
+use clvm_rs::serialize::{node_from_bytes, node_to_bytes};
 
 use anyhow::Result;
 
