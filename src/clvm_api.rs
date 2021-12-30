@@ -17,7 +17,13 @@ pub fn run_clvm_program_sha_256_tree(
     let mut allocator = Allocator::new();
     let mut allocator_args = Allocator::new();
     let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
-    let args = node_from_bytes(&mut allocator_args, program_args.as_ref()).unwrap();
+
+    let args;
+    if program_args.len() == 0 {
+        args = allocator_args.null();
+    } else {
+        args = node_from_bytes(&mut allocator_args, program_args.as_ref()).unwrap();
+    }
     let max_cost = 12000000000 as u64;
     let program_response = DefaultProgramRunner::new().run_program(
         &mut allocator,
@@ -44,7 +50,12 @@ pub fn run_clvm_program_atom(program_data: Vec<u8>, program_args: Vec<u8>) -> Re
     let mut allocator = Allocator::new();
     let mut allocator_args = Allocator::new();
     let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
-    let args = node_from_bytes(&mut allocator_args, program_args.as_ref()).unwrap();
+    let args;
+    if program_args.len() == 0 {
+        args = allocator_args.null();
+    } else {
+        args = node_from_bytes(&mut allocator_args, program_args.as_ref()).unwrap();
+    }
     let max_cost = 12000000000 as u64;
     let program_response = DefaultProgramRunner::new().run_program(
         &mut allocator,
