@@ -25,7 +25,8 @@ flutter_rust_bridge = "1.10.0"
 anyhow = { version = "1.0.52", features = ["backtrace"] }
 
 [dependencies.clvm_rs]
-version = "0.1.12"
+version = "0.1.16"
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 default-features = false
 
