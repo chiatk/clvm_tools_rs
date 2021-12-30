@@ -24,63 +24,6 @@ use crate::classic::clvm_tools::stages::stage_0::{
 };
 use clvm_rs::chia_dialect::chia_dialect;
 
-#[no_mangle]
-pub extern "C" fn rust_greeting(to: *const c_char) -> *mut c_char {
-    let c_str = unsafe { CStr::from_ptr(to) };
-    let recipient = match c_str.to_str() {
-        Err(_) => "there",
-        Ok(string) => string,
-    };
-
-    CString::new("Hello ".to_owned() + recipient)
-        .unwrap()
-        .into_raw()
-}
-
-#[no_mangle]
-pub extern "C" fn rust_cstr_free(s: *mut c_char) {
-    unsafe {
-        if s.is_null() {
-            return;
-        }
-        CString::from_raw(s)
-    };
-}
-
-#[no_mangle]
-pub extern "C" fn rust_run_clvm_program(data: &[u8]) -> *mut std::string::String {
-    let mut allocator = Allocator::new();
-    let program = match node_from_bytes(&mut allocator, data) {
-        Err(_) => {
-            let mut fail_result = std::string::String::from("");
-            return &mut fail_result;
-        }
-        Ok(r) => r,
-    };
-    let args = allocator.null();
-    let dialect = chia_dialect(false);
-    let max_cost = 12000000000 as u64;
-    let program_response = DefaultProgramRunner::new().run_program(
-        &mut allocator,
-        program,
-        args,
-        Some(RunProgramOption {
-            operator_lookup: None,
-            max_cost: if max_cost == 0 {
-                None
-            } else {
-                Some(max_cost as u64)
-            },
-            pre_eval_f: None,
-            strict: false,
-        }),
-    );
-    let run_result = program_response.unwrap();
-
-    let mut sha256 = sha256tree(&mut allocator, run_result.1).hex();
-    return &mut sha256;
-}
-
 const MAX_SINGLE_BYTE: u8 = 0x7f;
 const CONS_BOX_MARKER: u8 = 0xff;
 
