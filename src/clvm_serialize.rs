@@ -67,6 +67,38 @@ fn encode_size(f: &mut dyn Write, size: u64) -> std::io::Result<()> {
     Ok(())
 }
 
+pub fn node_ptr_to_stream(node: NodePtr, f: &mut dyn Write) -> std::io::Result<()> {
+    let mut values: Vec<NodePtr> = vec![node];
+    let a = Allocator::new();
+    while !values.is_empty() {
+        let v = values.pop().unwrap();
+        let n = a.sexp(v);
+        match n {
+            SExp::Atom(atom_ptr) => {
+                let atom = a.buf(&atom_ptr);
+                let size = atom.len();
+                if size == 0 {
+                    f.write_all(&[0x80_u8])?;
+                } else {
+                    let atom0 = atom[0];
+                    if size == 1 && (atom0 <= MAX_SINGLE_BYTE) {
+                        f.write_all(&[atom0])?;
+                    } else {
+                        encode_size(f, size as u64)?;
+                        f.write_all(atom)?;
+                    }
+                }
+            }
+            SExp::Pair(left, right) => {
+                f.write_all(&[CONS_BOX_MARKER as u8])?;
+                values.push(right);
+                values.push(left);
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn node_to_stream(node: &Node, f: &mut dyn Write) -> std::io::Result<()> {
     let mut values: Vec<NodePtr> = vec![node.node];
     let a = node.allocator;

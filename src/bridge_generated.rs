@@ -53,6 +53,41 @@ pub extern "C" fn wire_run_clvm_program_atom(
     )
 }
 
+#[no_mangle]
+pub extern "C" fn wire_compile_string(port: i64, content: *mut wire_uint_8_list) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "compile_string",
+            port: Some(port),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_content = content.wire2api();
+            move |task_callback| compile_string(api_content)
+        },
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn wire_run_string(
+    port: i64,
+    content: *mut wire_uint_8_list,
+    args: *mut wire_uint_8_list,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "run_string",
+            port: Some(port),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_content = content.wire2api();
+            let api_args = args.wire2api();
+            move |task_callback| run_string(api_content, api_args)
+        },
+    )
+}
+
 // Section: wire structs
 
 #[repr(C)]
@@ -91,6 +126,13 @@ where
         } else {
             Some(self.wire2api())
         }
+    }
+}
+
+impl Wire2Api<String> for *mut wire_uint_8_list {
+    fn wire2api(self) -> String {
+        let vec: Vec<u8> = self.wire2api();
+        String::from_utf8_lossy(&vec).into_owned()
     }
 }
 
