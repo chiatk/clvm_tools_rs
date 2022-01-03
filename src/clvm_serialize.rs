@@ -69,7 +69,7 @@ fn encode_size(f: &mut dyn Write, size: u64) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn node_ptr_to_stream(node: NodePtr) -> std::io::Result<Vec<ClvmResponse>> {
+pub fn prepare_response_for_flutter(node: NodePtr) -> std::io::Result<Vec<ClvmResponse>> {
     let mut values: Vec<NodePtr> = vec![node];
     let mut values_response: Vec<ClvmResponse> = vec![];
 

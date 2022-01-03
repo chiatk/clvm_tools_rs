@@ -20,8 +20,11 @@ use std::rc::Rc;
 
 use crate::classic::clvm::__type_compatibility__::Stream;
 use crate::classic::clvm::serialize::sexp_to_stream;
-use crate::clvm_serialize::node_ptr_to_stream;
+use crate::clvm_serialize::prepare_response_for_flutter;
 use anyhow::Result;
+use clvm_rs::cost::Cost;
+use clvm_rs::reduction::Response;
+use clvm_rs::run_program::{run_program, STRICT_MODE};
 
 #[derive(Debug, Clone)]
 pub struct ClvmResponse {
@@ -31,43 +34,20 @@ pub struct ClvmResponse {
     pub value_len: i32,
 }
 
-pub fn run_clvm_program_sha_256_tree(
-    program_data: Vec<u8>,
-    program_args: Vec<u8>,
-) -> Result<Vec<u8>> {
-    let mut allocator = Allocator::new();
-    let mut allocator_args = Allocator::new();
-    let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
+#[derive(Debug, Clone)]
+pub struct ProgramResponse {
+    pub cost: u64,
+    pub value: Vec<ClvmResponse>,
 
-    let args;
-    if program_args.len() == 0 {
-        args = allocator_args.null();
-    } else {
-        args = node_from_bytes(&mut allocator_args, program_args.as_ref()).unwrap();
-    }
-    let max_cost = 12000000000 as u64;
-    let program_response = DefaultProgramRunner::new().run_program(
-        &mut allocator,
-        program,
-        args,
-        Some(RunProgramOption {
-            operator_lookup: None,
-            max_cost: if max_cost == 0 {
-                None
-            } else {
-                Some(max_cost as u64)
-            },
-            pre_eval_f: None,
-            strict: false,
-        }),
-    );
-    let run_result = program_response.unwrap();
-
-    let sha_256_encoded = sha256tree(&mut allocator, run_result.1).data().to_vec();
-    Ok(sha_256_encoded)
+    pub sha_256_tree: Vec<u8>,
 }
 
-pub fn run_clvm_program_atom(program_data: Vec<u8>, program_args: Vec<u8>) -> Result<Vec<u8>> {
+
+pub fn run_serialized_program(
+    program_data: Vec<u8>,
+    program_args: Vec<u8>,
+    calc_256_tree: bool,
+) -> Result<ProgramResponse> {
     let mut allocator = Allocator::new();
     let mut allocator_args = Allocator::new();
     let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
@@ -94,8 +74,20 @@ pub fn run_clvm_program_atom(program_data: Vec<u8>, program_args: Vec<u8>) -> Re
         }),
     );
     let run_result = program_response.unwrap();
-    let f_result = node_to_bytes(&Node::new(&allocator, run_result.1)).unwrap();
-    Ok(f_result)
+    let values_response = prepare_response_for_flutter(run_result.1).unwrap();
+
+    let sha_256_encoded;
+    if calc_256_tree {
+        sha_256_encoded = sha256tree(&mut allocator, run_result.1).data().to_vec();
+    } else {
+        sha_256_encoded = vec![];
+    }
+    Ok(ProgramResponse {
+        cost: run_result.0,
+
+        value: values_response,
+        sha_256_tree: sha_256_encoded,
+    })
 }
 
 pub fn compile_string(content: String) -> Result<String> {
@@ -138,11 +130,13 @@ pub fn run_string(content: String, args: String) -> Result<Vec<ClvmResponse>> {
     let r_node = node_from_bytes(&mut convert_allocator, r2_ref.encode().as_ref()).unwrap();
 
     //let mut buffer = Cursor::new(Vec::new());
-    let values_response = node_ptr_to_stream(r_node).unwrap();
+    let values_response = prepare_response_for_flutter(r_node).unwrap();
     //  let vec = buffer.into_inner();
     return Ok(values_response);
 }
 
+
+// Allow compile clvm file and return the file path
 pub fn compile_clvm_file(
     real_input_path: String,
     output_path: String,

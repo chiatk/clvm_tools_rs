@@ -14,41 +14,25 @@ use flutter_rust_bridge::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_run_clvm_program_sha_256_tree(
+pub extern "C" fn wire_run_serialized_program(
     port: i64,
     program_data: *mut wire_uint_8_list,
     program_args: *mut wire_uint_8_list,
+    calc_256_tree: bool,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "run_clvm_program_sha_256_tree",
+            debug_name: "run_serialized_program",
             port: Some(port),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_program_data = program_data.wire2api();
             let api_program_args = program_args.wire2api();
-            move |task_callback| run_clvm_program_sha_256_tree(api_program_data, api_program_args)
-        },
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wire_run_clvm_program_atom(
-    port: i64,
-    program_data: *mut wire_uint_8_list,
-    program_args: *mut wire_uint_8_list,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "run_clvm_program_atom",
-            port: Some(port),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_program_data = program_data.wire2api();
-            let api_program_args = program_args.wire2api();
-            move |task_callback| run_clvm_program_atom(api_program_data, api_program_args)
+            let api_calc_256_tree = calc_256_tree.wire2api();
+            move |task_callback| {
+                run_serialized_program(api_program_data, api_program_args, api_calc_256_tree)
+            }
         },
     )
 }
@@ -186,6 +170,12 @@ impl Wire2Api<Vec<String>> for *mut wire_StringList {
     }
 }
 
+impl Wire2Api<bool> for bool {
+    fn wire2api(self) -> bool {
+        self
+    }
+}
+
 impl Wire2Api<u8> for u8 {
     fn wire2api(self) -> u8 {
         self
@@ -227,6 +217,18 @@ impl support::IntoDart for ClvmResponse {
     }
 }
 impl support::IntoDartExceptPrimitive for ClvmResponse {}
+
+impl support::IntoDart for ProgramResponse {
+    fn into_dart(self) -> support::DartCObject {
+        vec![
+            self.cost.into_dart(),
+            self.value.into_dart(),
+            self.sha_256_tree.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for ProgramResponse {}
 
 // Section: executor
 support::lazy_static! {

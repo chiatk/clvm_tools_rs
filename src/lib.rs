@@ -30,5 +30,3 @@ mod tests;
 mod clvm_api;
 pub mod clvm_serialize;
 
-#[cfg(target_family = "wasm")]
-pub mod wasm;
