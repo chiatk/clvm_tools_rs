@@ -18,10 +18,12 @@ use clvm_rs::reduction::{EvalErr, Reduction, Response};
 
 use clvm_rs::run_program::{run_program, PreEval};
 
+use crate::classic::clvm::sexp::CastableType::String;
 use crate::classic::clvm_tools::sha256tree::sha256tree;
 use crate::classic::clvm_tools::stages::stage_0::{
     DefaultProgramRunner, OpRouter, RunProgramOption, TRunProgram,
 };
+use crate::clvm_api::ClvmResponse;
 use clvm_rs::chia_dialect::chia_dialect;
 
 const MAX_SINGLE_BYTE: u8 = 0x7f;
@@ -67,8 +69,10 @@ fn encode_size(f: &mut dyn Write, size: u64) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn node_ptr_to_stream(node: NodePtr, f: &mut dyn Write) -> std::io::Result<()> {
+pub fn node_ptr_to_stream(node: NodePtr) -> std::io::Result<Vec<ClvmResponse>> {
     let mut values: Vec<NodePtr> = vec![node];
+    let mut values_response: Vec<ClvmResponse> = vec![];
+
     let a = Allocator::new();
     while !values.is_empty() {
         let v = values.pop().unwrap();
@@ -78,25 +82,54 @@ pub fn node_ptr_to_stream(node: NodePtr, f: &mut dyn Write) -> std::io::Result<(
                 let atom = a.buf(&atom_ptr);
                 let size = atom.len();
                 if size == 0 {
-                    f.write_all(&[0x80_u8])?;
+                    // f.write_all(&[0x80_u8])?;
+                    let value = ClvmResponse {
+                        value_type: std::string::String::from("empty"),
+                        value: vec![0x80_u8],
+                        encoded: std::string::String::from("u8"),
+                        value_len: 0,
+                    };
+                    values_response.push(value);
                 } else {
                     let atom0 = atom[0];
                     if size == 1 && (atom0 <= MAX_SINGLE_BYTE) {
-                        f.write_all(&[atom0])?;
+                        let value = ClvmResponse {
+                            value_type: std::string::String::from("byte"),
+                            value: vec![atom0],
+                            encoded: std::string::String::from("u8"),
+                            value_len: 1,
+                        };
+                        values_response.push(value);
                     } else {
-                        encode_size(f, size as u64)?;
-                        f.write_all(atom)?;
+                        let mut buffer = Cursor::new(Vec::new());
+                        encode_size(&mut buffer, size as u64)?;
+                        buffer.write_all(atom)?;
+                        let value = ClvmResponse {
+                            value_type: std::string::String::from("buffer"),
+                            value: buffer.into_inner(),
+                            encoded: std::string::String::from("u64"),
+                            value_len: size as i32,
+                        };
+                        values_response.push(value);
                     }
                 }
             }
             SExp::Pair(left, right) => {
-                f.write_all(&[CONS_BOX_MARKER as u8])?;
+                // f.write_all(&[CONS_BOX_MARKER as u8])?;
+
+                let value = ClvmResponse {
+                    value_type: std::string::String::from("CONS_BOX_MARKER"),
+                    value: vec![CONS_BOX_MARKER as u8],
+                    encoded: std::string::String::from("u8"),
+                    value_len: 1,
+                };
+                values_response.push(value);
                 values.push(right);
                 values.push(left);
             }
         }
     }
-    Ok(())
+    Ok(values_response)
 }
 
 pub fn node_to_stream(node: &Node, f: &mut dyn Write) -> std::io::Result<()> {

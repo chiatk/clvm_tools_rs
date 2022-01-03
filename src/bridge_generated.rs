@@ -88,7 +88,38 @@ pub extern "C" fn wire_run_string(
     )
 }
 
+#[no_mangle]
+pub extern "C" fn wire_compile_clvm_file(
+    port: i64,
+    real_input_path: *mut wire_uint_8_list,
+    output_path: *mut wire_uint_8_list,
+    search_paths: *mut wire_StringList,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "compile_clvm_file",
+            port: Some(port),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_real_input_path = real_input_path.wire2api();
+            let api_output_path = output_path.wire2api();
+            let api_search_paths = search_paths.wire2api();
+            move |task_callback| {
+                compile_clvm_file(api_real_input_path, api_output_path, api_search_paths)
+            }
+        },
+    )
+}
+
 // Section: wire structs
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_StringList {
+    ptr: *mut *mut wire_uint_8_list,
+    len: i32,
+}
 
 #[repr(C)]
 #[derive(Clone)]
@@ -100,6 +131,15 @@ pub struct wire_uint_8_list {
 // Section: wire enums
 
 // Section: allocate functions
+
+#[no_mangle]
+pub extern "C" fn new_StringList(len: i32) -> *mut wire_StringList {
+    let wrap = wire_StringList {
+        ptr: support::new_leak_vec_ptr(<*mut wire_uint_8_list>::new_with_null_ptr(), len),
+        len,
+    };
+    support::new_leak_box_ptr(wrap)
+}
 
 #[no_mangle]
 pub extern "C" fn new_uint_8_list(len: i32) -> *mut wire_uint_8_list {
@@ -136,6 +176,16 @@ impl Wire2Api<String> for *mut wire_uint_8_list {
     }
 }
 
+impl Wire2Api<Vec<String>> for *mut wire_StringList {
+    fn wire2api(self) -> Vec<String> {
+        let vec = unsafe {
+            let wrap = support::box_from_leak_ptr(self);
+            support::vec_from_leak_ptr(wrap.ptr, wrap.len)
+        };
+        vec.into_iter().map(Wire2Api::wire2api).collect()
+    }
+}
+
 impl Wire2Api<u8> for u8 {
     fn wire2api(self) -> u8 {
         self
@@ -164,6 +214,19 @@ impl<T> NewWithNullPtr for *mut T {
 }
 
 // Section: impl IntoDart
+
+impl support::IntoDart for ClvmResponse {
+    fn into_dart(self) -> support::DartCObject {
+        vec![
+            self.value_type.into_dart(),
+            self.value.into_dart(),
+            self.encoded.into_dart(),
+            self.value_len.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for ClvmResponse {}
 
 // Section: executor
 support::lazy_static! {
