@@ -29,4 +29,5 @@ mod tests;
 
 mod clvm_api;
 pub mod clvm_serialize;
+mod types_converter;
 

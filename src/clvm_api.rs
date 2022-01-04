@@ -3,6 +3,7 @@ use crate::classic::clvm_tools::sha256tree::sha256tree;
 use crate::classic::clvm_tools::stages::stage_0::{
     DefaultProgramRunner, RunProgramOption, TRunProgram,
 };
+use crate::compiler::clvm::parse_and_run;
 use crate::compiler::clvm::run;
 use crate::compiler::compiler::{compile_file, DefaultCompilerOpts};
 use crate::compiler::comptypes::CompileErr;
@@ -11,11 +12,8 @@ use crate::compiler::sexp::parse_sexp;
 use crate::compiler::srcloc::Srcloc;
 use clvm_rs::allocator::Allocator;
 use clvm_rs::allocator::{NodePtr, SExp};
-use clvm_rs::node::Node;
-use clvm_rs::serialize::{node_from_bytes, node_to_bytes, node_to_stream};
-use std::borrow::Borrow;
+use clvm_rs::serialize::node_from_bytes;
 use std::collections::HashMap;
-use std::io::{Bytes, Cursor, Write};
 use std::rc::Rc;
 
 use crate::classic::clvm::__type_compatibility__::Stream;
@@ -34,6 +32,26 @@ pub struct ClvmResponse {
     pub value_len: i32,
 }
 
+pub enum ArgBytesType {
+    Hex(),
+
+    String(),
+
+    Bytes(),
+
+    Number(),
+    G1Affine(),
+    ListOf(),
+    TupleOf()
+}
+
+#[derive(Debug, Clone)]
+pub struct ClvmArg {
+    pub value_type: ArgBytesType,
+    pub value: Vec<u8>,
+    pub children:Vec<ClvmArg>,
+}
+
 #[derive(Debug, Clone)]
 pub struct ProgramResponse {
     pub cost: u64,
@@ -41,11 +59,23 @@ pub struct ProgramResponse {
 
     pub sha_256_tree: Vec<u8>,
 }
+pub fn compiler_clvm(to_run: String, args: String, file_path: String) -> Result<Vec<ClvmResponse>> {
+    let mut allocator = Allocator::new();
+    let runner = Rc::new(DefaultProgramRunner::new());
+    let response = parse_and_run(&mut allocator, runner, &file_path, &to_run, &args);
 
+    let r2 = response.unwrap();
+    let r2_ref = r2.as_ref();
+    let mut convert_allocator = Allocator::new();
+
+    let r_node = node_from_bytes(&mut convert_allocator, r2_ref.encode().as_ref()).unwrap();
+    let values_response = prepare_response_for_flutter(r_node).unwrap();
+    return Ok(values_response);
+}
 
 pub fn run_serialized_program(
     program_data: Vec<u8>,
-    program_args: Vec<u8>,
+    program_args: Vec<ClvmArg>,
     calc_256_tree: bool,
 ) -> Result<ProgramResponse> {
     let mut allocator = Allocator::new();
@@ -122,19 +152,13 @@ pub fn run_string(content: String, args: String) -> Result<Vec<ClvmResponse>> {
         })
     });
     let r2 = r.unwrap();
-    // let mut r_allocator = Allocator::new();
     let r2_ref = r2.as_ref();
-    //let r_rc = r2_ref.borrow();
     let mut convert_allocator = Allocator::new();
 
     let r_node = node_from_bytes(&mut convert_allocator, r2_ref.encode().as_ref()).unwrap();
-
-    //let mut buffer = Cursor::new(Vec::new());
     let values_response = prepare_response_for_flutter(r_node).unwrap();
-    //  let vec = buffer.into_inner();
     return Ok(values_response);
 }
-
 
 // Allow compile clvm file and return the file path
 pub fn compile_clvm_file(

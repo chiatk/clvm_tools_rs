@@ -14,10 +14,32 @@ use flutter_rust_bridge::*;
 // Section: wire functions
 
 #[no_mangle]
+pub extern "C" fn wire_compiler_clvm(
+    port: i64,
+    to_run: *mut wire_uint_8_list,
+    args: *mut wire_uint_8_list,
+    file_path: *mut wire_uint_8_list,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "compiler_clvm",
+            port: Some(port),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_to_run = to_run.wire2api();
+            let api_args = args.wire2api();
+            let api_file_path = file_path.wire2api();
+            move |task_callback| compiler_clvm(api_to_run, api_args, api_file_path)
+        },
+    )
+}
+
+#[no_mangle]
 pub extern "C" fn wire_run_serialized_program(
     port: i64,
     program_data: *mut wire_uint_8_list,
-    program_args: *mut wire_uint_8_list,
+    program_args: *mut wire_list_clvm_arg,
     calc_256_tree: bool,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
@@ -107,6 +129,21 @@ pub struct wire_StringList {
 
 #[repr(C)]
 #[derive(Clone)]
+pub struct wire_ClvmArg {
+    value_type: i32,
+    value: *mut wire_uint_8_list,
+    children: *mut wire_list_clvm_arg,
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_list_clvm_arg {
+    ptr: *mut wire_ClvmArg,
+    len: i32,
+}
+
+#[repr(C)]
+#[derive(Clone)]
 pub struct wire_uint_8_list {
     ptr: *mut u8,
     len: i32,
@@ -120,6 +157,15 @@ pub struct wire_uint_8_list {
 pub extern "C" fn new_StringList(len: i32) -> *mut wire_StringList {
     let wrap = wire_StringList {
         ptr: support::new_leak_vec_ptr(<*mut wire_uint_8_list>::new_with_null_ptr(), len),
+        len,
+    };
+    support::new_leak_box_ptr(wrap)
+}
+
+#[no_mangle]
+pub extern "C" fn new_list_clvm_arg(len: i32) -> *mut wire_list_clvm_arg {
+    let wrap = wire_list_clvm_arg {
+        ptr: support::new_leak_vec_ptr(<wire_ClvmArg>::new_with_null_ptr(), len),
         len,
     };
     support::new_leak_box_ptr(wrap)
@@ -170,9 +216,44 @@ impl Wire2Api<Vec<String>> for *mut wire_StringList {
     }
 }
 
+impl Wire2Api<ArgBytesType> for i32 {
+    fn wire2api(self) -> ArgBytesType {
+        match self {
+            0 => ArgBytesType::Hex,
+            1 => ArgBytesType::String,
+            2 => ArgBytesType::Bytes,
+            3 => ArgBytesType::Number,
+            4 => ArgBytesType::G1Affine,
+            5 => ArgBytesType::ListOf,
+            6 => ArgBytesType::TupleOf,
+            _ => unreachable!("Invalid variant for ArgBytesType: {}", self),
+        }
+    }
+}
+
 impl Wire2Api<bool> for bool {
     fn wire2api(self) -> bool {
         self
+    }
+}
+
+impl Wire2Api<ClvmArg> for wire_ClvmArg {
+    fn wire2api(self) -> ClvmArg {
+        ClvmArg {
+            value_type: self.value_type.wire2api(),
+            value: self.value.wire2api(),
+            children: self.children.wire2api(),
+        }
+    }
+}
+
+impl Wire2Api<Vec<ClvmArg>> for *mut wire_list_clvm_arg {
+    fn wire2api(self) -> Vec<ClvmArg> {
+        let vec = unsafe {
+            let wrap = support::box_from_leak_ptr(self);
+            support::vec_from_leak_ptr(wrap.ptr, wrap.len)
+        };
+        vec.into_iter().map(Wire2Api::wire2api).collect()
     }
 }
 
@@ -200,6 +281,16 @@ pub trait NewWithNullPtr {
 impl<T> NewWithNullPtr for *mut T {
     fn new_with_null_ptr() -> Self {
         std::ptr::null_mut()
+    }
+}
+
+impl NewWithNullPtr for wire_ClvmArg {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            value_type: Default::default(),
+            value: core::ptr::null_mut(),
+            children: core::ptr::null_mut(),
+        }
     }
 }
 
