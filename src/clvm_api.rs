@@ -18,7 +18,7 @@ use clvm_rs::serialize::node_from_bytes;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::classic::clvm::__type_compatibility__::Stream;
+use crate::classic::clvm::__type_compatibility__::{sha256, Bytes, BytesFromType, Stream};
 use crate::classic::clvm::serialize::sexp_to_stream;
 use crate::clvm_serialize::prepare_response_for_flutter;
 use crate::types_converter::to_clvm_object;
@@ -67,8 +67,6 @@ pub struct ClvmArg {
 pub struct ProgramResponse {
     pub cost: u64,
     pub value: Vec<ClvmResponse>,
-
-    pub sha_256_tree: Vec<u8>,
 }
 pub fn compiler_clvm(to_run: String, args: String, file_path: String) -> Result<Vec<ClvmResponse>> {
     let mut allocator = Allocator::new();
@@ -82,11 +80,20 @@ pub fn compiler_clvm(to_run: String, args: String, file_path: String) -> Result<
     let values_response = prepare_response_for_flutter(r_node).unwrap();
     return Ok(values_response);
 }
+pub fn calc_tree_hash(arg: ClvmArg) -> Result<Vec<u8>> {
+    init_log();
+    error!("calc_tree_hash {:?}  ", arg.value);
+    let mut allocator = Allocator::new();
+    let node = to_clvm_object(&mut allocator, &arg).unwrap();
+
+    let sha_256_encoded = sha256tree(&mut allocator, node).data().to_vec();
+    error!("sha_256_encoded {:?}  ", sha_256_encoded);
+    return Ok(sha_256_encoded);
+}
 
 pub fn run_serialized_program(
     program_data: Vec<u8>,
     program_args: ClvmArg,
-    calc_256_tree: bool,
 ) -> Result<ProgramResponse> {
     let mut allocator = Allocator::new();
     // let mut allocator_args = Allocator::new();
@@ -122,17 +129,10 @@ pub fn run_serialized_program(
     let run_result = program_response.unwrap();
     let values_response = prepare_response_for_flutter(run_result.1).unwrap();
 
-    let sha_256_encoded;
-    if calc_256_tree {
-        sha_256_encoded = sha256tree(&mut allocator, run_result.1).data().to_vec();
-    } else {
-        sha_256_encoded = vec![];
-    }
     Ok(ProgramResponse {
         cost: run_result.0,
 
         value: values_response,
-        sha_256_tree: sha_256_encoded,
     })
 }
 

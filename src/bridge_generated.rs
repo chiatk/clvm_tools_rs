@@ -36,11 +36,25 @@ pub extern "C" fn wire_compiler_clvm(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_calc_tree_hash(port: i64, arg: *mut wire_ClvmArg) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "calc_tree_hash",
+            port: Some(port),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_arg = arg.wire2api();
+            move |task_callback| calc_tree_hash(api_arg)
+        },
+    )
+}
+
+#[no_mangle]
 pub extern "C" fn wire_run_serialized_program(
     port: i64,
     program_data: *mut wire_uint_8_list,
     program_args: *mut wire_ClvmArg,
-    calc_256_tree: bool,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -51,10 +65,7 @@ pub extern "C" fn wire_run_serialized_program(
         move || {
             let api_program_data = program_data.wire2api();
             let api_program_args = program_args.wire2api();
-            let api_calc_256_tree = calc_256_tree.wire2api();
-            move |task_callback| {
-                run_serialized_program(api_program_data, api_program_args, api_calc_256_tree)
-            }
+            move |task_callback| run_serialized_program(api_program_data, api_program_args)
         },
     )
 }
@@ -236,12 +247,6 @@ impl Wire2Api<ArgBytesType> for i32 {
     }
 }
 
-impl Wire2Api<bool> for bool {
-    fn wire2api(self) -> bool {
-        self
-    }
-}
-
 impl Wire2Api<ClvmArg> for *mut wire_ClvmArg {
     fn wire2api(self) -> ClvmArg {
         let wrap = unsafe { support::box_from_leak_ptr(self) };
@@ -323,12 +328,7 @@ impl support::IntoDartExceptPrimitive for ClvmResponse {}
 
 impl support::IntoDart for ProgramResponse {
     fn into_dart(self) -> support::DartCObject {
-        vec![
-            self.cost.into_dart(),
-            self.value.into_dart(),
-            self.sha_256_tree.into_dart(),
-        ]
-        .into_dart()
+        vec![self.cost.into_dart(), self.value.into_dart()].into_dart()
     }
 }
 impl support::IntoDartExceptPrimitive for ProgramResponse {}
