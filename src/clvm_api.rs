@@ -1,3 +1,5 @@
+extern crate android_logger;
+
 use crate::classic::clvm_tools::clvmc;
 use crate::classic::clvm_tools::sha256tree::sha256tree;
 use crate::classic::clvm_tools::stages::stage_0::{
@@ -19,10 +21,18 @@ use std::rc::Rc;
 use crate::classic::clvm::__type_compatibility__::Stream;
 use crate::classic::clvm::serialize::sexp_to_stream;
 use crate::clvm_serialize::prepare_response_for_flutter;
+use crate::types_converter::to_clvm_object;
 use anyhow::Result;
 use clvm_rs::cost::Cost;
 use clvm_rs::reduction::Response;
 use clvm_rs::run_program::{run_program, STRICT_MODE};
+
+use android_logger::{Config, FilterBuilder};
+use log::{error, Level};
+
+fn init_log() {
+    android_logger::init_once(Config::default().with_min_level(Level::Trace));
+}
 
 #[derive(Debug, Clone)]
 pub struct ClvmResponse {
@@ -32,24 +42,25 @@ pub struct ClvmResponse {
     pub value_len: i32,
 }
 
+#[derive(Debug, Clone)]
 pub enum ArgBytesType {
-    Hex(),
+    Hex,
 
-    String(),
+    String,
 
-    Bytes(),
+    Bytes,
 
-    Number(),
-    G1Affine(),
-    ListOf(),
-    TupleOf()
+    Number,
+    G1Affine,
+    ListOf,
+    TupleOf,
 }
 
 #[derive(Debug, Clone)]
 pub struct ClvmArg {
     pub value_type: ArgBytesType,
     pub value: Vec<u8>,
-    pub children:Vec<ClvmArg>,
+    pub children: Vec<ClvmArg>,
 }
 
 #[derive(Debug, Clone)]
@@ -66,27 +77,31 @@ pub fn compiler_clvm(to_run: String, args: String, file_path: String) -> Result<
 
     let r2 = response.unwrap();
     let r2_ref = r2.as_ref();
-    let mut convert_allocator = Allocator::new();
 
-    let r_node = node_from_bytes(&mut convert_allocator, r2_ref.encode().as_ref()).unwrap();
+    let r_node = node_from_bytes(&mut allocator, r2_ref.encode().as_ref()).unwrap();
     let values_response = prepare_response_for_flutter(r_node).unwrap();
     return Ok(values_response);
 }
 
 pub fn run_serialized_program(
     program_data: Vec<u8>,
-    program_args: Vec<ClvmArg>,
+    program_args: ClvmArg,
     calc_256_tree: bool,
 ) -> Result<ProgramResponse> {
     let mut allocator = Allocator::new();
-    let mut allocator_args = Allocator::new();
+    // let mut allocator_args = Allocator::new();
+    init_log();
+    error!("node_from_bytes :   ");
     let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
     let args;
-    if program_args.len() == 0 {
-        args = allocator_args.null();
+    error!("args len {}", program_args.children.len());
+    if program_args.children.len() == 0 {
+        args = allocator.null();
     } else {
-        args = node_from_bytes(&mut allocator_args, program_args.as_ref()).unwrap();
+        error!("processing args {:?}", program_args);
+        args = to_clvm_object(&mut allocator, &program_args).unwrap();
     }
+    error!("args loaded {}", args);
     let max_cost = 12000000000 as u64;
     let program_response = DefaultProgramRunner::new().run_program(
         &mut allocator,
@@ -103,6 +118,7 @@ pub fn run_serialized_program(
             strict: false,
         }),
     );
+    error!("program_response {:?}", program_response);
     let run_result = program_response.unwrap();
     let values_response = prepare_response_for_flutter(run_result.1).unwrap();
 

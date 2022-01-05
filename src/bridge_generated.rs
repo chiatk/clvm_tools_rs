@@ -39,7 +39,7 @@ pub extern "C" fn wire_compiler_clvm(
 pub extern "C" fn wire_run_serialized_program(
     port: i64,
     program_data: *mut wire_uint_8_list,
-    program_args: *mut wire_list_clvm_arg,
+    program_args: *mut wire_ClvmArg,
     calc_256_tree: bool,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
@@ -163,6 +163,11 @@ pub extern "C" fn new_StringList(len: i32) -> *mut wire_StringList {
 }
 
 #[no_mangle]
+pub extern "C" fn new_box_autoadd_clvm_arg() -> *mut wire_ClvmArg {
+    support::new_leak_box_ptr(wire_ClvmArg::new_with_null_ptr())
+}
+
+#[no_mangle]
 pub extern "C" fn new_list_clvm_arg(len: i32) -> *mut wire_list_clvm_arg {
     let wrap = wire_list_clvm_arg {
         ptr: support::new_leak_vec_ptr(<wire_ClvmArg>::new_with_null_ptr(), len),
@@ -234,6 +239,13 @@ impl Wire2Api<ArgBytesType> for i32 {
 impl Wire2Api<bool> for bool {
     fn wire2api(self) -> bool {
         self
+    }
+}
+
+impl Wire2Api<ClvmArg> for *mut wire_ClvmArg {
+    fn wire2api(self) -> ClvmArg {
+        let wrap = unsafe { support::box_from_leak_ptr(self) };
+        (*wrap).wire2api().into()
     }
 }
 
