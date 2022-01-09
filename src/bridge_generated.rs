@@ -71,7 +71,11 @@ pub extern "C" fn wire_run_serialized_program(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_compile_string(port: i64, content: *mut wire_uint_8_list) {
+pub extern "C" fn wire_compile_string(
+    port: i64,
+    content: *mut wire_uint_8_list,
+    file_path: *mut wire_uint_8_list,
+) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "compile_string",
@@ -80,7 +84,8 @@ pub extern "C" fn wire_compile_string(port: i64, content: *mut wire_uint_8_list)
         },
         move || {
             let api_content = content.wire2api();
-            move |task_callback| compile_string(api_content)
+            let api_file_path = file_path.wire2api();
+            move |task_callback| compile_string(api_content, api_file_path)
         },
     )
 }

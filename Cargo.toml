@@ -23,11 +23,9 @@ sha2 = "0.9.5"
 yamlette = "0.0.8"
 flutter_rust_bridge = "1.13.0"
 anyhow = { version = "1.0.52", features = ["backtrace"] }
-android_logger = "0.10.1"
-log = "0.4.14"
 
 [dependencies.clvm_rs]
-version = "0.1.16"
+version = "0.1.12"
 crate-type = ["cdylib", "rlib", "staticlib"]
 
 default-features = false

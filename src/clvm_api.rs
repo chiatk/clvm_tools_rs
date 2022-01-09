@@ -100,15 +100,10 @@ pub fn run_serialized_program(
     init_log();
     error!("node_from_bytes :   ");
     let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
-    let args;
+    let args = to_clvm_object(&mut allocator, &program_args).unwrap();
     error!("args len {}", program_args.children.len());
-    if program_args.children.len() == 0 {
-        args = allocator.null();
-    } else {
-        error!("processing args {:?}", program_args);
-        args = to_clvm_object(&mut allocator, &program_args).unwrap();
-    }
-    error!("args loaded {}", args);
+    error!("program_args {:?}", program_args);
+    error!("args loaded {:?}", args);
     let max_cost = 12000000000 as u64;
     let program_response = DefaultProgramRunner::new().run_program(
         &mut allocator,
@@ -131,15 +126,14 @@ pub fn run_serialized_program(
 
     Ok(ProgramResponse {
         cost: run_result.0,
-
         value: values_response,
     })
 }
 
-pub fn compile_string(content: String) -> Result<String> {
+pub fn compile_string(content: String, file_path: String) -> Result<String> {
     let mut allocator = Allocator::new();
     let runner = Rc::new(DefaultProgramRunner::new());
-    let opts = Rc::new(DefaultCompilerOpts::new(&"*test*".to_string()));
+    let opts = Rc::new(DefaultCompilerOpts::new(&file_path));
 
     let r = compile_file(&mut allocator, runner, opts, &content)
         .map(|x| x.to_string())
