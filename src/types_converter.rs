@@ -5,7 +5,7 @@ use crate::util::number_from_u8;
 use bls12_381::G1Affine;
 use clvm_rs::allocator::{Allocator, NodePtr};
 use clvm_rs::reduction::{EvalErr, Reduction};
-use log::{error, Level};
+ 
 use std::borrow::Borrow;
 use std::convert::TryInto;
 use std::rc::Rc;

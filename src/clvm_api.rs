@@ -27,7 +27,7 @@ use clvm_rs::cost::Cost;
 use clvm_rs::reduction::Response;
 use clvm_rs::run_program::{run_program, STRICT_MODE};
 
-use android_logger::{Config, FilterBuilder};
+//use android_logger::{Config, FilterBuilder};
 /* use log::{error, Level};
 
 fn init_log() {
