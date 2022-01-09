@@ -28,11 +28,11 @@ use clvm_rs::reduction::Response;
 use clvm_rs::run_program::{run_program, STRICT_MODE};
 
 use android_logger::{Config, FilterBuilder};
-use log::{error, Level};
+/* use log::{error, Level};
 
 fn init_log() {
     android_logger::init_once(Config::default().with_min_level(Level::Trace));
-}
+} */
 
 #[derive(Debug, Clone)]
 pub struct ClvmResponse {
@@ -81,13 +81,13 @@ pub fn compiler_clvm(to_run: String, args: String, file_path: String) -> Result<
     return Ok(values_response);
 }
 pub fn calc_tree_hash(arg: ClvmArg) -> Result<Vec<u8>> {
-    init_log();
-    error!("calc_tree_hash {:?}  ", arg.value);
+    //init_log();
+   //error!("calc_tree_hash {:?}  ", arg.value);
     let mut allocator = Allocator::new();
     let node = to_clvm_object(&mut allocator, &arg).unwrap();
 
     let sha_256_encoded = sha256tree(&mut allocator, node).data().to_vec();
-    error!("sha_256_encoded {:?}  ", sha_256_encoded);
+   //error!("sha_256_encoded {:?}  ", sha_256_encoded);
     return Ok(sha_256_encoded);
 }
 
@@ -97,13 +97,13 @@ pub fn run_serialized_program(
 ) -> Result<ProgramResponse> {
     let mut allocator = Allocator::new();
     // let mut allocator_args = Allocator::new();
-    init_log();
-    error!("node_from_bytes :   ");
+    //init_log();
+   //error!("node_from_bytes :   ");
     let program = node_from_bytes(&mut allocator, program_data.as_ref()).unwrap();
     let args = to_clvm_object(&mut allocator, &program_args).unwrap();
-    error!("args len {}", program_args.children.len());
-    error!("program_args {:?}", program_args);
-    error!("args loaded {:?}", args);
+   //error!("args len {}", program_args.children.len());
+   //error!("program_args {:?}", program_args);
+   //error!("args loaded {:?}", args);
     let max_cost = 12000000000 as u64;
     let program_response = DefaultProgramRunner::new().run_program(
         &mut allocator,
@@ -120,7 +120,7 @@ pub fn run_serialized_program(
             strict: false,
         }),
     );
-    error!("program_response {:?}", program_response);
+   //error!("program_response {:?}", program_response);
     let run_result = program_response.unwrap();
     let values_response = prepare_response_for_flutter(run_result.1).unwrap();
 

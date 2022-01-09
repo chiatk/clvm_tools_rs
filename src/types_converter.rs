@@ -28,27 +28,27 @@ pub fn convert_to_casteable_type(argument: &ClvmArg) -> Result<CastableType, Eva
 }
 
 pub fn to_hex_type(hex_text: &ClvmArg) -> Result<CastableType, EvalErr> {
-    error!("to_hex_type {:?}", hex_text.value);
+   //error!("to_hex_type {:?}", hex_text.value);
     return to_bytes_type(hex_text);
 }
 
 pub fn to_string_type(str: &ClvmArg) -> Result<CastableType, EvalErr> {
-    error!("to_string_type {:?}", str.value);
+   //error!("to_string_type {:?}", str.value);
     return Ok(CastableType::String(
         String::from_utf8(str.clone().value).unwrap(),
     ));
 }
 
 pub fn to_number_type(number: &ClvmArg) -> Result<CastableType, EvalErr> {
-    error!("to_number_type {:?}", number.value);
+   //error!("to_number_type {:?}", number.value);
     let number_value = number_from_u8(number.value.borrow());
-    error!("number_value {:?}", number_value);
+   //error!("number_value {:?}", number_value);
 
     return Ok(CastableType::Number(number_value));
 }
 
 pub fn to_g1_affine_type(number: &ClvmArg) -> Result<CastableType, EvalErr> {
-    error!("to_g1_affine_type {:?}", number.value);
+   //error!("to_g1_affine_type {:?}", number.value);
     let bytes_array: [u8; 48] = vector_to_fixed_array(number.clone().value);
     let g1_affline = G1Affine::from_compressed(&bytes_array).unwrap();
 
@@ -67,13 +67,13 @@ where
     array
 }
 pub fn to_list_of_type(list: &ClvmArg) -> Result<CastableType, EvalErr> {
-    error!("to_list_of_type {}", list.children.len());
+   //error!("to_list_of_type {}", list.children.len());
     let mut stack: Vec<Rc<CastableType>> = Vec::new();
     let temp_alocattor = Allocator::new();
     //stack.push(Rc::new(CastableType::CLVMObject(temp_alocattor.null())));
     let len = list.children.len();
     for i in 0..len {
-        error!("i {}", i);
+       //error!("i {}", i);
         let item = list.children[i].borrow();
         let clvm_object = convert_to_casteable_type(item).unwrap();
         stack.push(Rc::new(clvm_object));
