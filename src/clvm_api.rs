@@ -1,4 +1,4 @@
-#extern crate android_logger;
+ 
 
 use crate::classic::clvm_tools::clvmc;
 use crate::classic::clvm_tools::sha256tree::sha256tree;
