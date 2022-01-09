@@ -349,7 +349,7 @@ fn map_6() {
     assert_eq!(result, Ok("(64 36 16 4)".to_string()));
 }
 
-#[test]
+/* #[test]
 fn pool_member_innerpuz() {
     let mut testpath = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     testpath.push("resources/tests/stage_2");
@@ -441,3 +441,4 @@ fn pool_member_innerpuz() {
     let result = s.get_value().decode().trim().to_string();
     assert_eq!(result, desired);
 }
+ */
