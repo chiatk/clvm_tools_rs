@@ -1,6 +1,6 @@
 [package]
 name = "clvm_tools_rs"
-version = "0.1.0"
+version = "0.1.8"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -21,25 +21,29 @@ do-notation = "0.1.3"
 serde_json = "1.0"
 sha2 = "0.9.5"
 yamlette = "0.0.8"
-flutter_rust_bridge = "1.13.0"
-anyhow = { version = "1.0.52", features = ["backtrace"] }
+tempfile = "3.3.0"
+
+[patch.crates-io]
+skimmer = { git = "https://github.com/dnsl48/skimmer", rev = "ca914ef624ecf39a75ed7afef10e7838fffe9127" }
 
 [dependencies.clvm_rs]
-version = "0.1.12"
-crate-type = ["cdylib", "rlib", "staticlib"]
-
-default-features = false
+git = "https://github.com/prozacchiwawa/clvm_rs"
+branch = "20211029-try-config"
+package = "clvm_rust"
 
 [lib]
 name = "clvm_tools_rs"
-crate-type = ["cdylib", "rlib", "staticlib"]
+crate-type = ["cdylib", "rlib"]
 
 [target.'cfg(target_family="wasm")'.dependencies]
 wasm-bindgen = "0.2.75"
 wasm-bindgen-test = "0.3.25"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-pyo3 = "0.14.2"
+pyo3 = { version = "0.14.2", features = ["abi3-py37", "extension-module"] }
+
+[build-dependencies]
+pyo3-build-config = "0.15.1"
 
 [[bin]]
 name = "opd"
