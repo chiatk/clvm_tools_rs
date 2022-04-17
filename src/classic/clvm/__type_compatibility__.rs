@@ -1,16 +1,16 @@
+use num_traits::{One, Zero};
 use std::clone::Clone;
-use std::cmp::{min, max};
 use std::cmp::Ordering;
+use std::cmp::{max, min};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::option::Option;
 use std::string::String;
-use num_traits::{Zero, One};
 
 use bls12_381::G1Affine;
 use hex;
-use sha2::Sha256;
 use sha2::Digest;
+use sha2::Sha256;
 
 use crate::util::Number;
 
@@ -19,9 +19,9 @@ pub fn to_hexstr(r: &Vec<u8>) -> String {
 }
 
 pub fn char_to_string(ch: char) -> String {
-    match String::from_utf8(vec!(ch as u8)) {
+    match String::from_utf8(vec![ch as u8]) {
         Ok(s) => s,
-        _ => String::new()
+        _ => String::new(),
     }
 }
 
@@ -43,7 +43,7 @@ pub fn PyBytes_Repr(r: &Vec<u8>, dquoted: bool) -> String {
         match c {
             '\'' => squotes += 1,
             '\"' => dquotes += 1,
-            _ => ()
+            _ => (),
         }
     }
     let mut quote = '\'';
@@ -72,7 +72,7 @@ pub fn PyBytes_Repr(r: &Vec<u8>, dquoted: bool) -> String {
             s += "\\r";
         } else if c < ' ' || b >= 0x7f {
             s += "\\x";
-            s += hex::encode(vec!(b)).as_str();
+            s += hex::encode(vec![b]).as_str();
         } else {
             s += char_to_string(c).as_str();
         }
@@ -90,8 +90,7 @@ pub enum BytesFromType {
     G1Element(G1Affine),
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Bytes {
     _b: Vec<u8>,
 }
@@ -100,7 +99,7 @@ pub fn ordering_to_int(o: Ordering) -> i32 {
     match o {
         Ordering::Less => -1,
         Ordering::Equal => 0,
-        Ordering::Greater => 1
+        Ordering::Greater => 1,
     }
 }
 
@@ -110,30 +109,31 @@ pub fn ordering_to_int(o: Ordering) -> i32 {
 impl Bytes {
     pub fn new(value: Option<BytesFromType>) -> Self {
         match value {
-            None => Bytes { _b: vec!() },
+            None => Bytes { _b: vec![] },
             Some(BytesFromType::Raw(v)) => Bytes { _b: v },
             Some(BytesFromType::String(s)) => {
                 let bytes = s.as_bytes();
-                let mut bvec = vec!();
+                let mut bvec = vec![];
                 for b in bytes {
                     bvec.push(*b);
                 }
                 Bytes::new(Some(BytesFromType::Raw(bvec)))
             }
             Some(BytesFromType::Hex(hstr)) => {
-                let hex_stripped =
-                    hstr.
-                        replace(" ", "").
-                        replace("\t", "").
-                        replace("\r", "").
-                        replace("\n", "");
+                let hex_stripped = hstr
+                    .replace(" ", "")
+                    .replace("\t", "")
+                    .replace("\r", "")
+                    .replace("\n", "");
 
                 match hex::decode(hex_stripped) {
                     Ok(d) => Bytes { _b: d },
-                    _ => Bytes { _b: vec!() }
+                    _ => Bytes { _b: vec![] },
                 }
             }
-            Some(BytesFromType::G1Element(g1)) => Bytes { _b: g1.to_uncompressed().to_vec() },
+            Some(BytesFromType::G1Element(g1)) => Bytes {
+                _b: g1.to_uncompressed().to_vec(),
+            },
         }
     }
 
@@ -162,25 +162,23 @@ impl Bytes {
     pub fn concat(&self, b: &Bytes) -> Bytes {
         let mut this_bin = self._b.clone();
         let mut that_bin = b.raw();
-        let mut concat_bin =
-            Vec::<u8>::with_capacity(this_bin.len() + that_bin.len());
+        let mut concat_bin = Vec::<u8>::with_capacity(this_bin.len() + that_bin.len());
         concat_bin.append(&mut this_bin);
         concat_bin.append(&mut that_bin);
         return Bytes::new(Some(BytesFromType::Raw(concat_bin)));
     }
 
     pub fn slice(&self, start: usize, length: Option<usize>) -> Self {
-        let len =
-            match length {
-                Some(x) => {
-                    if self._b.len() > start + x {
-                        x
-                    } else {
-                        self._b.len() - start
-                    }
+        let len = match length {
+            Some(x) => {
+                if self._b.len() > start + x {
+                    x
+                } else {
+                    self._b.len() - start
                 }
-                None => self._b.len() - start
-            };
+            }
+            None => self._b.len() - start,
+        };
         let mut ui8_clone = Vec::<u8>::with_capacity(len);
         for i in start..start + len - 1 {
             ui8_clone.push(self._b[i]);
@@ -285,9 +283,9 @@ pub fn sha256(value: Bytes) -> Bytes {
 }
 
 pub fn list<E, I>(vals: I) -> Vec<E>
-    where
-        I: Iterator<Item=E>,
-        E: Clone
+where
+    I: Iterator<Item = E>,
+    E: Clone,
 {
     return vals.map(|v| v.clone()).collect();
 }
@@ -297,8 +295,8 @@ pub trait PythonStr {
 }
 
 pub fn str<T>(thing: T) -> String
-    where
-        T: PythonStr
+where
+    T: PythonStr,
 {
     return thing.py_str();
 }
@@ -308,41 +306,40 @@ pub trait PythonRepr {
 }
 
 pub fn repr<T>(thing: T) -> String
-    where
-        T: PythonRepr
+where
+    T: PythonRepr,
 {
     return thing.py_repr();
 }
 
 #[derive(Debug)]
 pub enum Tuple<T1, T2> {
-    Tuple(T1, T2)
+    Tuple(T1, T2),
 }
 
 impl<T1, T2> Tuple<T1, T2> {
     pub fn first(&self) -> &T1 {
         return match self {
-            Tuple::Tuple(f, _) => f
+            Tuple::Tuple(f, _) => f,
         };
     }
 
     pub fn rest(&self) -> &T2 {
         return match self {
-            Tuple::Tuple(_, r) => r
+            Tuple::Tuple(_, r) => r,
         };
     }
 
     pub fn to_string(&self) -> String
-        where
-            T1: PythonStr,
-            T2: PythonStr
+    where
+        T1: PythonStr,
+        T2: PythonStr,
     {
-        return
-            "(".to_owned() +
-                self.first().py_str().as_str() +
-                ", " +
-                self.rest().py_str().as_str() +
-                ")";
+        return "(".to_owned()
+            + self.first().py_str().as_str()
+            + ", "
+            + self.rest().py_str().as_str()
+            + ")";
     }
 }
 
@@ -351,11 +348,13 @@ pub fn t<T1, T2>(v1: T1, v2: T2) -> Tuple<T1, T2> {
 }
 
 impl<T1, T2> PythonStr for Tuple<T1, T2>
-    where
-        T1: PythonStr,
-        T2: PythonStr
+where
+    T1: PythonStr,
+    T2: PythonStr,
 {
-    fn py_str(&self) -> String { return self.to_string(); }
+    fn py_str(&self) -> String {
+        return self.to_string();
+    }
 }
 
 const BUF_ALLOC_MULTIPLIER: usize = 4;
@@ -376,7 +375,7 @@ impl Stream {
                 return Stream {
                     seek: 0,
                     length: 0,
-                    buffer: vec!(),
+                    buffer: vec![],
                 };
             }
             Some(b) => {
@@ -411,16 +410,16 @@ impl Stream {
     }
 
     fn re_allocate(&mut self, size: Option<usize>) {
-        let mut s =
-            match size {
-                None => self.buffer.len() * BUF_ALLOC_MULTIPLIER,
-                Some(s) => s
-            };
+        let mut s = match size {
+            None => self.buffer.len() * BUF_ALLOC_MULTIPLIER,
+            Some(s) => s,
+        };
 
         /*
          * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Invalid_array_length
          */
-        if s > 4294967295 { // 4294967295 = 2**32 - 1
+        if s > 4294967295 {
+            // 4294967295 = 2**32 - 1
             s = 4294967295;
         }
 
@@ -438,7 +437,8 @@ impl Stream {
         }
 
         if b.length() > 0 {
-            self.buffer.resize(max(self.seek + b.length(), self.buffer.len()), 0);
+            self.buffer
+                .resize(max(self.seek + b.length(), self.buffer.len()), 0);
 
             for i in 0..b.length() {
                 self.buffer[i + self.seek] = b.at(i);
@@ -459,12 +459,11 @@ impl Stream {
             return Bytes::new(None); // Return empty byte
         }
 
-        let size =
-            if self.seek + size <= self.length {
-                size
-            } else {
-                self.length - self.seek
-            };
+        let size = if self.seek + size <= self.length {
+            size
+        } else {
+            self.length - self.seek
+        };
 
         let mut u8 = Vec::<u8>::with_capacity(size);
         for i in 0..size {
@@ -479,9 +478,12 @@ impl Stream {
     }
 }
 
-pub fn bi_zero() -> Number { return Zero::zero(); }
-
-pub fn bi_one() -> Number { return One::one(); }
+pub fn bi_zero() -> Number {
+    return Zero::zero();
+}
+pub fn bi_one() -> Number {
+    return One::one();
+}
 
 pub fn get_u32(v: &Vec<u8>, n: usize) -> u32 {
     let p1 = v[n] as u32;
@@ -496,8 +498,8 @@ pub fn set_u8(vec: &mut Vec<u8>, n: usize, v: u8) {
 }
 
 pub fn set_u32(vec: &mut Vec<u8>, n: usize, v: u32) {
-    vec[n] = (v & 0xff) as u8;
-    vec[n + 1] = ((v >> 8) & 0xff) as u8;
-    vec[n + 2] = ((v >> 16) & 0xff) as u8;
-    vec[n + 3] = ((v >> 24) & 0xff) as u8;
+    vec[n] = ((v >> 24) & 0xff) as u8;
+    vec[n + 1] = ((v >> 16) & 0xff) as u8;
+    vec[n + 2] = ((v >> 8) & 0xff) as u8;
+    vec[n + 3] = (v & 0xff) as u8;
 }

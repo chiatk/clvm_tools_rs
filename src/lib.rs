@@ -1,4 +1,3 @@
-mod bridge_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be accurate, and you can change it according to your needs. */
 #[macro_use]
 extern crate lazy_static;
 
@@ -15,6 +14,8 @@ extern crate do_notation;
 #[cfg(not(any(test, target_family = "wasm")))]
 extern crate pyo3;
 
+extern crate tempfile;
+
 mod util;
 
 pub mod classic;
@@ -27,7 +28,5 @@ mod py;
 #[cfg(test)]
 mod tests;
 
-mod clvm_api;
-pub mod clvm_serialize;
-mod types_converter;
-
+#[cfg(target_family = "wasm")]
+pub mod wasm;
