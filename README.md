@@ -51,8 +51,16 @@ Use with chia-blockchain
 
 Linux Build
 
-sudo apt install -y curl \
-    gnupg ca-certificates git \
-    gcc-multilib g++-multilib cmake libssl-dev pkg-config \
-    libfreetype6-dev libasound2-dev libexpat1-dev libxcb-composite0-dev \
-    libbz2-dev libsndio-dev freeglut3-dev libxmu-dev libxi-dev libfontconfig1-dev
+https://tecadmin.net/install-python-3-8-ubuntu/
+
+sudo apt-get install build-essential checkinstall
+sudo apt-get install libreadline-gplv2-dev libncursesw5-dev libssl-dev \
+    libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev
+
+cd /opt
+sudo wget https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz
+sudo tar xzf Python-3.8.12.tgz
+
+cd Python-3.8.12
+sudo ./configure --enable-optimizations
+sudo make altinstall
