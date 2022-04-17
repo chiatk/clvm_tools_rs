@@ -3,6 +3,7 @@
     unused,
     clippy::redundant_closure,
     clippy::useless_conversion,
+    clippy::unit_arg,
     non_snake_case
 )]
 // AUTO GENERATED FILE, DO NOT EDIT.
@@ -11,11 +12,13 @@
 use crate::clvm_api::*;
 use flutter_rust_bridge::*;
 
+// Section: imports
+
 // Section: wire functions
 
 #[no_mangle]
 pub extern "C" fn wire_compiler_clvm(
-    port: i64,
+    port_: i64,
     to_run: *mut wire_uint_8_list,
     args: *mut wire_uint_8_list,
     file_path: *mut wire_uint_8_list,
@@ -23,7 +26,7 @@ pub extern "C" fn wire_compiler_clvm(
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "compiler_clvm",
-            port: Some(port),
+            port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
@@ -36,11 +39,11 @@ pub extern "C" fn wire_compiler_clvm(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_calc_tree_hash(port: i64, arg: *mut wire_ClvmArg) {
+pub extern "C" fn wire_calc_tree_hash(port_: i64, arg: *mut wire_ClvmArg) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "calc_tree_hash",
-            port: Some(port),
+            port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
@@ -52,14 +55,14 @@ pub extern "C" fn wire_calc_tree_hash(port: i64, arg: *mut wire_ClvmArg) {
 
 #[no_mangle]
 pub extern "C" fn wire_run_serialized_program(
-    port: i64,
+    port_: i64,
     program_data: *mut wire_uint_8_list,
     program_args: *mut wire_ClvmArg,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "run_serialized_program",
-            port: Some(port),
+            port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
@@ -72,14 +75,14 @@ pub extern "C" fn wire_run_serialized_program(
 
 #[no_mangle]
 pub extern "C" fn wire_compile_string(
-    port: i64,
+    port_: i64,
     content: *mut wire_uint_8_list,
     file_path: *mut wire_uint_8_list,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "compile_string",
-            port: Some(port),
+            port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
@@ -92,14 +95,14 @@ pub extern "C" fn wire_compile_string(
 
 #[no_mangle]
 pub extern "C" fn wire_run_string(
-    port: i64,
+    port_: i64,
     content: *mut wire_uint_8_list,
     args: *mut wire_uint_8_list,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "run_string",
-            port: Some(port),
+            port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
@@ -112,7 +115,7 @@ pub extern "C" fn wire_run_string(
 
 #[no_mangle]
 pub extern "C" fn wire_compile_clvm_file(
-    port: i64,
+    port_: i64,
     real_input_path: *mut wire_uint_8_list,
     output_path: *mut wire_uint_8_list,
     search_paths: *mut wire_StringList,
@@ -120,7 +123,7 @@ pub extern "C" fn wire_compile_clvm_file(
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "compile_clvm_file",
-            port: Some(port),
+            port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
@@ -165,7 +168,9 @@ pub struct wire_uint_8_list {
     len: i32,
 }
 
-// Section: wire enums
+// Section: wrapper structs
+
+// Section: static checks
 
 // Section: allocate functions
 
@@ -339,6 +344,7 @@ impl support::IntoDart for ProgramResponse {
 impl support::IntoDartExceptPrimitive for ProgramResponse {}
 
 // Section: executor
+
 support::lazy_static! {
     pub static ref FLUTTER_RUST_BRIDGE_HANDLER: support::DefaultHandler = Default::default();
 }
@@ -351,3 +357,21 @@ pub extern "C" fn free_WireSyncReturnStruct(val: support::WireSyncReturnStruct) 
         let _ = support::vec_from_leak_ptr(val.ptr, val.len);
     }
 }
+
+    // ----------- DUMMY CODE FOR BINDGEN ----------
+
+    // copied from: allo-isolate
+    pub type DartPort = i64;
+    pub type DartPostCObjectFnType = unsafe extern "C" fn(port_id: DartPort, message: *mut std::ffi::c_void) -> bool;
+    #[no_mangle] pub unsafe extern "C" fn store_dart_post_cobject(ptr: DartPostCObjectFnType) { panic!("dummy code") }
+
+    // copied from: frb_rust::support.rs
+    #[repr(C)]
+    pub struct WireSyncReturnStruct {
+        pub ptr: *mut u8,
+        pub len: i32,
+        pub success: bool,
+    }
+
+    // ---------------------------------------------
+    
